@@ -233,11 +233,11 @@ A: qBTC is designed to be quantum-resistant. Once sufficiently powerful quantum 
 
 ### Q: Can I convert Bitcoin to qBTC?
 
-A: qBTC is a separate blockchain. You cannot directly convert Bitcoin to qBTC within the wallet. You would need to use an exchange or atomic swap service.
+A: Bitcoin can be converted to qBTC using the bridge service available at https://qb.tc/dashboard
 
 ### Q: Are qBTC transactions compatible with Bitcoin?
 
-A: No, qBTC uses a completely different signature scheme and transaction format. They are separate networks.
+A: qBTC has been built to be a post quantum version of Bitcoin however, it does not inherit its transaction history and has its own.
 
 ### Q: How do I backup my qBTC wallet?
 
@@ -249,7 +249,7 @@ A: Like Bitcoin, qBTC is non-custodial. If you lose your private key, your funds
 
 ## Resources
 
-- [qBTC Core Repository](https://github.com/your-org/qBTC-core)
+- [qBTC Core Repository](https://github.com/q-btc/qBTC-core)
 - [NIST Post-Quantum Cryptography](https://csrc.nist.gov/projects/post-quantum-cryptography)
 - [ML-DSA (CRYSTALS-Dilithium) Specification](https://pq-crystals.org/dilithium/)
 - [@noble/post-quantum Library](https://github.com/paulmillr/noble-post-quantum)
