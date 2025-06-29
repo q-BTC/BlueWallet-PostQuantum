@@ -1,4 +1,4 @@
-# BlueWallet - A Bitcoin & Lightning Wallet
+# BlueWallet Post Quantum - A Bitcoin & Lightning Wallet upgraded to include PQC and connect to the qBTC network
 
 [![GitHub tag](https://img.shields.io/badge/dynamic/json.svg?url=https://raw.githubusercontent.com/BlueWallet/BlueWallet/master/package.json&query=$.version&label=Version)](https://github.com/BlueWallet/BlueWallet)
 [![CircleCI](https://circleci.com/gh/BlueWallet/BlueWallet.svg?style=svg)](https://circleci.com/gh/BlueWallet/BlueWallet)
