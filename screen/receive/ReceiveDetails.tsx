@@ -244,6 +244,12 @@ const ReceiveDetails = () => {
         const addressToUse = address || decoded.address;
         if (!addressToUse) return;
 
+        // Skip Bitcoin Electrum operations for non-Bitcoin wallets
+        if (wallet && 'usesBitcoinInfrastructure' in wallet && !wallet.usesBitcoinInfrastructure()) {
+          console.debug('Skipping balance check for non-Bitcoin wallet:', wallet.type);
+          return;
+        }
+
         console.debug('checking address', addressToUse, 'for balance...');
         const balance = await BlueElectrum.getBalanceByAddress(addressToUse);
         console.debug('...got', balance);

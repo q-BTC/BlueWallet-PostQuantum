@@ -192,14 +192,22 @@ const WalletTransactions: React.FC<WalletTransactionsProps> = ({ route }) => {
         setFetchFailures(0);
         const newTimestamp = Date.now();
         setLastFetchTimestamp(newTimestamp);
-      } catch (err) {
+      } catch (err: unknown) {
         setFetchFailures(prev => {
           const newFailures = prev + 1;
           // Only show error on final attempt for automatic refresh
           if ((isManualRefresh || newFailures === MAX_FAILURES) && newFailures >= MAX_FAILURES) {
-            if (err) {
-              presentAlert({ message: (err as Error).message, type: AlertType.Toast });
+            let errorMessage = 'Unknown error occurred';
+            
+            if (err instanceof Error) {
+              errorMessage = err.message;
+            } else if (typeof err === 'string') {
+              errorMessage = err;
+            } else if (err && typeof err === 'object' && 'message' in err) {
+              errorMessage = String((err as any).message);
             }
+            
+            presentAlert({ message: errorMessage, type: AlertType.Toast });
           }
           setIsLoading(true);
           return newFailures;

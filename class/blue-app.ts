@@ -743,12 +743,22 @@ export class BlueApp {
       let c = 0;
       for (const wallet of this.wallets) {
         if (c++ === index) {
+          // Skip non-Bitcoin wallets that use their own infrastructure
+          if ('usesBitcoinInfrastructure' in wallet && !wallet.usesBitcoinInfrastructure()) {
+            console.log('Skipping non-Bitcoin wallet:', wallet.type);
+            continue;
+          }
           await wallet.fetchBalance();
         }
       }
     } else {
       for (const wallet of this.wallets) {
         console.log('fetching balance for', wallet.getLabel());
+        // Skip non-Bitcoin wallets that use their own infrastructure
+        if ('usesBitcoinInfrastructure' in wallet && !wallet.usesBitcoinInfrastructure()) {
+          console.log('Skipping non-Bitcoin wallet:', wallet.type);
+          continue;
+        }
         await wallet.fetchBalance();
       }
     }
@@ -770,6 +780,12 @@ export class BlueApp {
       let c = 0;
       for (const wallet of this.wallets) {
         if (c++ === index) {
+          // Skip non-Bitcoin wallets that use their own infrastructure
+          if ('usesBitcoinInfrastructure' in wallet && !wallet.usesBitcoinInfrastructure()) {
+            console.log('Skipping non-Bitcoin wallet:', wallet.type);
+            continue;
+          }
+          
           await wallet.fetchTransactions();
 
           if ('fetchPendingTransactions' in wallet) {
@@ -780,6 +796,12 @@ export class BlueApp {
       }
     } else {
       for (const wallet of this.wallets) {
+        // Skip non-Bitcoin wallets that use their own infrastructure
+        if ('usesBitcoinInfrastructure' in wallet && !wallet.usesBitcoinInfrastructure()) {
+          console.log('Skipping non-Bitcoin wallet:', wallet.type);
+          continue;
+        }
+        
         await wallet.fetchTransactions();
         if ('fetchPendingTransactions' in wallet) {
           await wallet.fetchPendingTransactions();

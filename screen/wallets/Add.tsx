@@ -15,7 +15,7 @@ import {
 import A from '../../blue_modules/analytics';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
 import { BlueButtonLink, BlueFormLabel, BlueText } from '../../BlueComponents';
-import { HDSegwitBech32Wallet, HDSegwitP2SHWallet, LightningCustodianWallet, SegwitP2SHWallet } from '../../class';
+import { HDSegwitBech32Wallet, HDSegwitP2SHWallet, LightningCustodianWallet, SegwitP2SHWallet, QBTCWallet } from '../../class';
 import presentAlert from '../../components/Alert';
 import Button from '../../components/Button';
 import { useTheme } from '../../components/themes';
@@ -40,6 +40,7 @@ enum ButtonSelected {
   // @ts-ignore: Return later to update
   OFFCHAIN = Chain.OFFCHAIN,
   VAULT = 'VAULT',
+  QBTC = 'QBTC',
 }
 
 interface State {
@@ -196,6 +197,12 @@ const WalletsAdd: React.FC = () => {
         subtitle: LightningCustodianWallet.subtitleReadable,
         menuState: selectedWalletType === ButtonSelected.OFFCHAIN,
       },
+      {
+        id: QBTCWallet.type,
+        text: QBTCWallet.typeReadable,
+        subtitle: 'Post-Quantum Secure',
+        menuState: selectedWalletType === ButtonSelected.QBTC,
+      },
     ];
 
     const walletAction: Action = {
@@ -247,6 +254,8 @@ const WalletsAdd: React.FC = () => {
             setSelectedIndex(2);
           } else if (id === LightningCustodianWallet.type) {
             handleOnLightningButtonPressed();
+          } else if (id === QBTCWallet.type) {
+            confirmResetEntropy(ButtonSelected.QBTC);
           } else if (id === '12_words') {
             navigate('ProvideEntropy', { words: 12, entropy: entropy?.toString('hex') });
           } else if (id === '24_words') {
@@ -269,11 +278,18 @@ const WalletsAdd: React.FC = () => {
   }, [HeaderRight, colorScheme, colors.foregroundColor, setOptions, toolTipActions]);
 
   useEffect(() => {
-    getLNDHub()
-      .then(url => (url ? setWalletBaseURI(url) : setWalletBaseURI('')))
-      .catch(() => setWalletBaseURI(''))
-      .finally(() => setIsLoading(false));
-  }, []);
+    if (selectedWalletType === ButtonSelected.OFFCHAIN) {
+      getLNDHub()
+        .then(url => (url ? setWalletBaseURI(url) : setWalletBaseURI('')))
+        .catch(() => setWalletBaseURI(''))
+        .finally(() => setIsLoading(false));
+    } else if (selectedWalletType === ButtonSelected.QBTC) {
+      setWalletBaseURI('http://localhost:8000');
+      setIsLoading(false);
+    } else {
+      setIsLoading(false);
+    }
+  }, [selectedWalletType]);
 
   const setIsLoading = (value: boolean) => {
     dispatch({ type: 'SET_LOADING', payload: value });
@@ -344,6 +360,49 @@ const WalletsAdd: React.FC = () => {
     } else if (selectedWalletType === ButtonSelected.VAULT) {
       setIsLoading(false);
       navigate('WalletsAddMultisig', { walletLabel: label.trim().length > 0 ? label : loc.multisig.default_label });
+    } else if (selectedWalletType === ButtonSelected.QBTC) {
+      createQBTCWallet();
+    }
+  };
+
+  const createQBTCWallet = async () => {
+    try {
+      console.log('Creating qBTC wallet...');
+      const wallet = new QBTCWallet();
+      console.log('QBTCWallet instance created');
+      
+      wallet.setLabel(label || 'qBTC Wallet');
+      console.log('Label set');
+      
+      // Set node URL if provided
+      if (walletBaseURI?.trim()) {
+        wallet.setNodeUrl(walletBaseURI.trim());
+        console.log('Node URL set:', walletBaseURI.trim());
+      }
+      
+      console.log('Starting wallet generation...');
+      await wallet.generate();
+      console.log('Wallet generated successfully');
+      
+      addWallet(wallet);
+      console.log('Wallet added to storage');
+      
+      await saveToDisk();
+      console.log('Wallet saved to disk');
+      
+      A(A.ENUM.CREATED_WALLET);
+      triggerHapticFeedback(HapticFeedbackTypes.NotificationSuccess);
+      
+      // Navigate to backup screen
+      navigate('PleaseBackup', {
+        walletID: wallet.getID(),
+      });
+    } catch (error: any) {
+      setIsLoading(false);
+      console.error('qBTC wallet creation failed at step:', error);
+      console.error('Error details:', error.message);
+      console.error('Stack trace:', error.stack);
+      presentAlert({ message: error.message || 'Failed to create qBTC wallet' });
     }
   };
 
@@ -458,6 +517,13 @@ const WalletsAdd: React.FC = () => {
           size={styles.button}
         />
         {selectedWalletType === ButtonSelected.OFFCHAIN && LightningButtonMemo}
+        <WalletButton
+          buttonType="qBTC"
+          testID="ActivateQBTCButton"
+          active={selectedWalletType === ButtonSelected.QBTC}
+          onPress={() => confirmResetEntropy(ButtonSelected.QBTC)}
+          size={styles.button}
+        />
       </View>
       <View style={styles.advanced}>
         {selectedWalletType === ButtonSelected.OFFCHAIN && (
@@ -474,6 +540,32 @@ const WalletsAdd: React.FC = () => {
                 onChangeText={setWalletBaseURI}
                 onSubmitEditing={Keyboard.dismiss}
                 placeholder={loc.wallets.add_lndhub_placeholder}
+                clearButtonMode="while-editing"
+                autoCapitalize="none"
+                textContentType="URL"
+                autoCorrect={false}
+                placeholderTextColor="#81868e"
+                style={styles.textInputCommon}
+                editable={!isLoading}
+                underlineColorAndroid="transparent"
+              />
+            </View>
+          </>
+        )}
+        
+        {selectedWalletType === ButtonSelected.QBTC && (
+          <>
+            <BlueSpacing20 />
+            <View style={styles.lndhubTitle}>
+              <BlueText>qBTC Node URL</BlueText>
+            </View>
+
+            <View style={[styles.lndUri, stylesHook.lndUri]}>
+              <TextInput
+                value={walletBaseURI}
+                onChangeText={setWalletBaseURI}
+                onSubmitEditing={Keyboard.dismiss}
+                placeholder="http://localhost:8000"
                 clearButtonMode="while-editing"
                 autoCapitalize="none"
                 textContentType="URL"

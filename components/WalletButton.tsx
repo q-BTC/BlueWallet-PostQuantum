@@ -42,6 +42,12 @@ const buttonDetails: Record<string, ButtonDetails> = {
     explain: loc.wallets.add_lightning_explain,
     borderColorActive: 'lnborderColor',
   },
+  qBTC: {
+    image: require('../img/addWallet/bitcoin.png'), // Using bitcoin image for now
+    title: 'qBTC',
+    explain: 'Post-Quantum Secure Bitcoin',
+    borderColorActive: 'newBlue',
+  },
 };
 
 const WalletButton: React.FC<WalletButtonProps> = ({ buttonType, testID, onPress, size, active }) => {

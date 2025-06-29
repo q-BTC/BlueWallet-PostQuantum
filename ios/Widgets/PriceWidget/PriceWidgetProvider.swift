@@ -30,14 +30,13 @@ struct PriceWidgetProvider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<PriceWidgetEntry>) -> Void) {
-        var entries: [PriceWidgetEntry] = []
-
         let userPreferredCurrency = Currency.getUserPreferredCurrency()
         if userPreferredCurrency != Currency.getLastSelectedCurrency() {
             Currency.saveNewSelectedCurrency()
         }
 
         Task {
+            var entries: [PriceWidgetEntry] = []
             do {
                 if let data = try await MarketAPI.fetchPrice(currency: userPreferredCurrency), let formattedRate = data.formattedRate {
                     let currentMarketData = MarketData(nextBlock: "", sats: "", price: formattedRate, rate: data.rateDouble, dateString: data.lastUpdate)

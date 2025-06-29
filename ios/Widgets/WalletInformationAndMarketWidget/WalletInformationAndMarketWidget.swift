@@ -53,12 +53,12 @@ struct WalletInformationAndMarketWidgetProvider: TimelineProvider {
 
             fetchMarketDataWithRetry(currency: userPreferredCurrency, retries: 3) { marketData in
                 let entry = WalletInformationAndMarketWidgetEntry(date: Date(), marketData: marketData, allWalletsBalance: allWalletsBalance)
+                entries.append(entry)
+                let timeline = Timeline(entries: entries, policy: .atEnd)
                 Task {
                     await entryStore.setLastSuccessfulEntry(entry)
-                    entries.append(entry)
-                    let timeline = Timeline(entries: entries, policy: .atEnd)
-                    completion(timeline)
                 }
+                completion(timeline)
             }
         }
     }
