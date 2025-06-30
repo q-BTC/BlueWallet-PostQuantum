@@ -227,7 +227,7 @@ const SendDetails = () => {
 
   useEffect(() => {
     // check if we have a suitable wallet
-    const suitable = wallets.filter(w => w.chain === Chain.ONCHAIN && w.allowSend());
+    const suitable = wallets.filter(w => (w.chain === Chain.ONCHAIN || w.chain === 'QBTC') && w.allowSend());
     if (suitable.length === 0) {
       triggerHapticFeedback(HapticFeedbackTypes.NotificationError);
       presentAlert({ title: loc.errors.error, message: loc.send.details_wallet_before_tx });

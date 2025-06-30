@@ -24,6 +24,7 @@ import { SegwitP2SHWallet } from './wallets/segwit-p2sh-wallet';
 import { SLIP39LegacyP2PKHWallet, SLIP39SegwitBech32Wallet, SLIP39SegwitP2SHWallet } from './wallets/slip39-wallets';
 import { ExtendedTransaction, Transaction, TWallet } from './wallets/types';
 import { WatchOnlyWallet } from './wallets/watch-only-wallet';
+import { QBTCWallet } from './wallets/qbtc-wallet';
 import { getLNDHub } from '../helpers/lndHub';
 
 let usedBucketNum: boolean | number = false;
@@ -462,6 +463,9 @@ export class BlueApp {
             unserializedWallet = new HDSegwitBech32Wallet();
             unserializedWallet.setSecret(tempObj.secret.replace('ldk://', ''));
             break;
+          case QBTCWallet.type:
+            unserializedWallet = QBTCWallet.fromJson(key) as unknown as QBTCWallet;
+            break;
           case LegacyWallet.type:
           default:
             unserializedWallet = LegacyWallet.fromJson(key) as unknown as LegacyWallet;
@@ -743,22 +747,12 @@ export class BlueApp {
       let c = 0;
       for (const wallet of this.wallets) {
         if (c++ === index) {
-          // Skip non-Bitcoin wallets that use their own infrastructure
-          if ('usesBitcoinInfrastructure' in wallet && !wallet.usesBitcoinInfrastructure()) {
-            console.log('Skipping non-Bitcoin wallet:', wallet.type);
-            continue;
-          }
           await wallet.fetchBalance();
         }
       }
     } else {
       for (const wallet of this.wallets) {
         console.log('fetching balance for', wallet.getLabel());
-        // Skip non-Bitcoin wallets that use their own infrastructure
-        if ('usesBitcoinInfrastructure' in wallet && !wallet.usesBitcoinInfrastructure()) {
-          console.log('Skipping non-Bitcoin wallet:', wallet.type);
-          continue;
-        }
         await wallet.fetchBalance();
       }
     }
@@ -780,12 +774,6 @@ export class BlueApp {
       let c = 0;
       for (const wallet of this.wallets) {
         if (c++ === index) {
-          // Skip non-Bitcoin wallets that use their own infrastructure
-          if ('usesBitcoinInfrastructure' in wallet && !wallet.usesBitcoinInfrastructure()) {
-            console.log('Skipping non-Bitcoin wallet:', wallet.type);
-            continue;
-          }
-          
           await wallet.fetchTransactions();
 
           if ('fetchPendingTransactions' in wallet) {
@@ -796,12 +784,6 @@ export class BlueApp {
       }
     } else {
       for (const wallet of this.wallets) {
-        // Skip non-Bitcoin wallets that use their own infrastructure
-        if ('usesBitcoinInfrastructure' in wallet && !wallet.usesBitcoinInfrastructure()) {
-          console.log('Skipping non-Bitcoin wallet:', wallet.type);
-          continue;
-        }
-        
         await wallet.fetchTransactions();
         if ('fetchPendingTransactions' in wallet) {
           await wallet.fetchPendingTransactions();

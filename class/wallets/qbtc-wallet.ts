@@ -64,7 +64,7 @@ export class QBTCWallet extends AbstractWallet {
   // Store keys as Uint8Array
   private _privateKey: Uint8Array | null = null;
   private _publicKey: Uint8Array | null = null;
-  private _qbtcNodeUrl: string = 'http://localhost:8000'; // Default qBTC node
+  private _qbtcNodeUrl: string = 'https://api.bitcoinqs.org:8080'; // Default qBTC node
   private _chainId: number = CHAIN_ID;
   private _txs: QBTCTransaction[] = [];
   private _nodeAvailable: boolean = false;
@@ -72,6 +72,17 @@ export class QBTCWallet extends AbstractWallet {
   constructor() {
     super();
     this.chain = 'QBTC' as any; // qBTC chain identifier
+    // Ensure node URL is always HTTPS
+    this._ensureHttps();
+  }
+
+  /**
+   * Ensure the node URL uses HTTPS
+   */
+  private _ensureHttps(): void {
+    if (this._qbtcNodeUrl.startsWith('http://')) {
+      this._qbtcNodeUrl = this._qbtcNodeUrl.replace('http://', 'https://');
+    }
   }
 
   /**
@@ -97,9 +108,17 @@ export class QBTCWallet extends AbstractWallet {
   }
 
   /**
-   * Set the qBTC node URL
+   * Set the qBTC node URL - always force HTTPS
    */
   setNodeUrl(url: string): void {
+    // Force HTTPS regardless of input
+    if (url.startsWith('http://')) {
+      url = url.replace('http://', 'https://');
+    }
+    // If no protocol, add https://
+    if (!url.startsWith('https://')) {
+      url = 'https://' + url;
+    }
     this._qbtcNodeUrl = url;
   }
 
@@ -210,8 +229,9 @@ export class QBTCWallet extends AbstractWallet {
       this._publicKey = publicKey;
       console.log('qBTC generate: Keys stored in instance');
       
-      // Store private key as hex in secret field
-      this.secret = this.toHex(secretKey);
+      // Store both private and public keys as hex in secret field (separated by colon)
+      // This is necessary because ML-DSA doesn't allow deriving public key from private key
+      this.secret = this.toHex(secretKey) + ':' + this.toHex(publicKey);
       console.log('qBTC generate: Secret hex stored');
       
       // Derive address
@@ -233,7 +253,8 @@ export class QBTCWallet extends AbstractWallet {
   importKeys(privateKeyHex: string, publicKeyHex: string): void {
     this._privateKey = this.fromHex(privateKeyHex);
     this._publicKey = this.fromHex(publicKeyHex);
-    this.secret = privateKeyHex;
+    // Store both keys in secret field
+    this.secret = privateKeyHex + ':' + publicKeyHex;
     this._address = this.deriveAddress(this._publicKey);
   }
 
@@ -301,106 +322,65 @@ export class QBTCWallet extends AbstractWallet {
     if (!this._address) return [];
 
     try {
-      const response = await axios.get(`${this._qbtcNodeUrl}/utxos/${this._address}`);
+      // Force HTTPS
+      const nodeUrl = this._qbtcNodeUrl.replace('http://', 'https://');
+      const url = `${nodeUrl}/utxos/${this._address}`;
+      console.log('qBTC: Fetching UTXOs from:', url);
+      const response = await axios.get(url);
+      console.log('qBTC: UTXOs response:', response.data);
       return response.data.utxos || [];
-    } catch (error) {
-      console.error('Error fetching UTXOs:', error);
+    } catch (error: any) {
+      console.error('qBTC: Error fetching UTXOs:', error.message);
+      if (error.response?.status === 404) {
+        console.log('qBTC: UTXOs endpoint not found, returning empty array');
+      }
       return [];
     }
   }
 
   /**
    * Create a qBTC transaction
+   * Based on qBTC's simpler account-based model without UTXOs
    */
-  async createTransaction(
-    targets: Array<{ address: string; value: number }>, 
-    feeRate: number, 
-    changeAddress?: string
-  ): Promise<QBTCTransaction> {
+  createTransaction(
+    utxos: any[], // Not used for qBTC
+    targets: Array<{ address: string; value?: number }>,
+    feeRate: number,
+    changeAddress: string,
+    sequence: number, // Not used for qBTC
+    skipSigning = false,
+    masterFingerprint: number // Not used for qBTC
+  ): any {
     if (!this._publicKey || !this._address) {
       throw new Error('Wallet not initialized');
     }
 
-    // Fetch UTXOs
-    const utxos = await this.fetchUtxos();
-    if (utxos.length === 0) {
-      throw new Error('No UTXOs available');
+    // For qBTC, we only support single recipient transactions
+    if (targets.length !== 1) {
+      throw new Error('qBTC only supports single recipient transactions');
     }
 
-    // Calculate total amount needed
-    const totalNeeded = targets.reduce((sum, target) => sum.plus(target.value), new BigNumber(0));
-    const minerFee = totalNeeded.multipliedBy(0.001).decimalPlaces(8); // 0.1% fee
-    const totalRequired = totalNeeded.plus(minerFee);
-
-    // Select inputs
-    const inputs: QBTCInput[] = [];
-    let totalAvailable = new BigNumber(0);
-
-    for (const utxo of utxos) {
-      if (!utxo.spent) {
-        inputs.push({
-          txid: utxo.txid,
-          utxo_index: utxo.utxo_index,
-          sender: utxo.sender,
-          receiver: utxo.receiver,
-          amount: utxo.amount,
-          spent: false
-        });
-        totalAvailable = totalAvailable.plus(utxo.amount);
-        
-        if (totalAvailable.isGreaterThanOrEqualTo(totalRequired)) {
-          break;
-        }
-      }
-    }
-
-    if (totalAvailable.isLessThan(totalRequired)) {
-      throw new Error(`Insufficient funds: have ${totalAvailable}, need ${totalRequired}`);
-    }
-
-    // Create outputs
-    const outputs: QBTCOutput[] = [];
-    let outputIndex = 0;
-
-    // Add target outputs
-    for (const target of targets) {
-      outputs.push({
-        utxo_index: outputIndex++,
-        sender: this._address,
-        receiver: target.address,
-        amount: new BigNumber(target.value).toFixed(8),
-        spent: false
-      });
-    }
-
-    // Add change output if needed
-    const change = totalAvailable.minus(totalRequired);
-    if (change.isGreaterThan(0)) {
-      outputs.push({
-        utxo_index: outputIndex++,
-        sender: this._address,
-        receiver: changeAddress || this._address,
-        amount: change.toFixed(8),
-        spent: false
-      });
-    }
-
-    // Create message for signing
+    const target = targets[0];
+    const amount = new BigNumber(target.value).dividedBy(1e8).toFixed(8); // Convert from satoshis to qBTC
+    
+    // Create message for signing based on qBTC format
+    // Format: sender:receiver:amount:timestamp:chainId
     const timestamp = Date.now();
     const msgParts = [
       this._address,
-      targets[0].address, // Primary recipient
-      targets[0].value.toString(),
+      target.address,
+      amount,
       timestamp.toString(),
       this._chainId.toString()
     ];
     const messageStr = msgParts.join(':');
 
-    // Create transaction
+    // Create simplified transaction for qBTC
     const tx: QBTCTransaction = {
       type: 'transaction',
-      inputs: inputs,
-      outputs: outputs,
+      chainID: this._chainId.toString(),
+      inputs: [], // qBTC doesn't use inputs
+      outputs: [], // qBTC doesn't use outputs
       body: {
         msg_str: messageStr,
         pubkey: this.toHex(this._publicKey),
@@ -409,13 +389,25 @@ export class QBTCWallet extends AbstractWallet {
       timestamp: timestamp
     };
 
-    // Sign the message (not the full transaction)
-    tx.body.signature = this.signMessage(messageStr);
+    // Sign the message
+    if (!skipSigning) {
+      tx.body.signature = this.signMessage(messageStr);
+    }
 
     // Calculate txid
     tx.txid = this.calculateTxid(tx);
 
-    return tx;
+    // Return in the format expected by BlueWallet
+    return {
+      tx: tx,
+      outputs: [{
+        address: target.address,
+        value: target.value
+      }],
+      fee: 0, // qBTC doesn't have explicit fees
+      psbt: null, // qBTC doesn't use PSBT
+      inputs: []
+    };
   }
 
   /**
@@ -438,8 +430,9 @@ export class QBTCWallet extends AbstractWallet {
         pubkey: pubkeyBytes.toString('base64')
       };
 
-      // Send to qBTC node /worker endpoint
-      const response = await axios.post(`${this._qbtcNodeUrl}/worker`, payload);
+      // Send to qBTC node /worker endpoint - Force HTTPS
+      const nodeUrl = this._qbtcNodeUrl.replace('http://', 'https://');
+      const response = await axios.post(`${nodeUrl}/worker`, payload);
 
       if (response.data.status === 'success' && response.data.txid) {
         return response.data.txid;
@@ -467,23 +460,56 @@ export class QBTCWallet extends AbstractWallet {
     }
 
     try {
-      const response = await axios.get(`${this._qbtcNodeUrl}/transactions/${this._address}`);
+      // Force HTTPS
+      const nodeUrl = this._qbtcNodeUrl.replace('http://', 'https://');
+      const url = `${nodeUrl}/transactions/${this._address}`;
+      console.log('qBTC: Fetching transactions from:', url);
+      const response = await axios.get(url);
+      console.log('qBTC: Transactions response:', response.data);
       const txs = response.data.transactions || [];
       
       // Convert qBTC transactions to BlueWallet format
-      this._txs = txs.map((tx: any) => ({
-        txid: tx.txid,
-        confirmations: tx.confirmations || 0,
-        value: parseInt(tx.amount),
-        fee: parseInt(tx.fee || '0'),
-        time: Math.floor(tx.timestamp / 1000), // Convert ms to seconds
-        inputs: tx.inputs || [],
-        outputs: tx.outputs || []
-      }));
+      this._txs = txs.map((tx: any) => {
+        // Determine if this is incoming or outgoing based on direction
+        const isIncoming = tx.direction === 'received';
+        const amount = new BigNumber(tx.amount).multipliedBy(1e8).toNumber(); // Convert to satoshis
+        
+        return {
+          txid: tx.txid,
+          confirmations: tx.confirmations || 1, // Default to 1 if not provided
+          value: isIncoming ? amount : -amount, // Positive for received, negative for sent
+          fee: 0, // qBTC response doesn't include fee
+          time: Math.floor(tx.timestamp / 1000), // Convert ms to seconds
+          received: isIncoming ? new Date(tx.timestamp).toISOString() : undefined,
+          inputs: isIncoming ? [{
+            addresses: [tx.counterpart],
+            value: amount
+          }] : [{
+            addresses: [this._address],
+            value: amount
+          }],
+          outputs: isIncoming ? [{
+            addresses: [this._address],
+            value: amount,
+            n: 0,
+            scriptPubKey: {
+              addresses: [this._address]
+            }
+          }] : [{
+            addresses: [tx.counterpart],
+            value: amount,
+            n: 0,
+            scriptPubKey: {
+              addresses: [tx.counterpart]
+            }
+          }]
+        };
+      });
       
       this._lastTxFetch = Date.now();
-    } catch (error) {
-      console.warn('qBTC node not available, no transactions to fetch');
+    } catch (error: any) {
+      console.error('qBTC: Error fetching transactions:', error.message);
+      console.error('qBTC: Error details:', error.response?.data || error);
       this._txs = [];
       this._lastTxFetch = Date.now();
       // Don't throw error - just set empty transactions list
@@ -568,7 +594,12 @@ export class QBTCWallet extends AbstractWallet {
     }
 
     try {
-      const response = await axios.get(`${this._qbtcNodeUrl}/balance/${this._address}`);
+      // Force HTTPS
+      const nodeUrl = this._qbtcNodeUrl.replace('http://', 'https://');
+      const url = `${nodeUrl}/balance/${this._address}`;
+      console.log('qBTC: Fetching balance from:', url);
+      const response = await axios.get(url);
+      console.log('qBTC: Balance response:', response.data);
       const balanceStr = response.data.balance || '0';
       
       // Convert to satoshis (qBTC uses 8 decimal places like Bitcoin)
@@ -577,8 +608,9 @@ export class QBTCWallet extends AbstractWallet {
       this._nodeAvailable = true;
       
       this._lastBalanceFetch = Date.now();
-    } catch (error) {
-      console.warn('qBTC node not available, setting balance to 0');
+    } catch (error: any) {
+      console.error('qBTC: Error fetching balance:', error.message);
+      console.error('qBTC: Error details:', error.response?.data || error);
       this.balance = 0;
       this.unconfirmed_balance = 0;
       this._nodeAvailable = false;
@@ -624,9 +656,10 @@ export class QBTCWallet extends AbstractWallet {
   }
 
   getID(): string {
-    // Use SHA256 of public key as wallet ID
-    if (!this._publicKey) return '';
-    const hash = createHash('sha256').update(this._publicKey).digest();
+    // Use SHA256 of address as wallet ID (more reliable than public key)
+    const addr = this.getAddress();
+    if (!addr) return '';
+    const hash = createHash('sha256').update(addr).digest();
     return hash.toString('hex');
   }
 
@@ -636,7 +669,24 @@ export class QBTCWallet extends AbstractWallet {
 
   setSecret(secret: string): void {
     this.secret = secret;
-    this._privateKey = this.fromHex(secret);
+    if (secret && secret.length > 0) {
+      try {
+        this._privateKey = this.fromHex(secret);
+        // Derive public key from private key if not already set
+        if (!this._publicKey && this._privateKey) {
+          // ML-DSA-87 doesn't allow deriving public key from private key alone
+          // We need to store both keys in the secret
+          const parts = secret.split(':');
+          if (parts.length === 2) {
+            this._privateKey = this.fromHex(parts[0]);
+            this._publicKey = this.fromHex(parts[1]);
+            this._address = this.deriveAddress(this._publicKey);
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to set secret for QBTCWallet:', e);
+      }
+    }
   }
 
   /**
@@ -671,6 +721,20 @@ export class QBTCWallet extends AbstractWallet {
       wallet.setChainId(data.chainId);
     }
     
+    return wallet;
+  }
+
+  /**
+   * Override fromJson to properly restore QBTCWallet
+   */
+  static fromJson(obj: string): QBTCWallet {
+    const wallet = AbstractWallet.fromJson.call(this, obj) as QBTCWallet;
+    // Ensure keys are properly restored from secret
+    if (wallet.secret) {
+      wallet.setSecret(wallet.secret);
+    }
+    // Force HTTPS for node URL
+    wallet._ensureHttps();
     return wallet;
   }
 }
