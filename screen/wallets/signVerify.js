@@ -114,8 +114,9 @@ const SignVerify = () => {
       automaticallyAdjustContentInsets
       automaticallyAdjustKeyboardInsets
       contentInsetAdjustmentBehavior="automatic"
-      contentContainerStyle={styles.root}
+      contentContainerStyle={styles.scrollContent}
       style={[styles.root, stylesHooks.root]}
+      keyboardShouldPersistTaps="handled"
     >
       {!isKeyboardVisible && (
         <>
@@ -151,7 +152,7 @@ const SignVerify = () => {
         value={signature}
         onChangeText={t => setSignature(t.replace('\n', ''))}
         testID="Signature"
-        style={[styles.text, stylesHooks.text]}
+        style={[styles.text, styles.textSignature, stylesHooks.text]}
         autoCorrect={false}
         autoCapitalize="none"
         spellCheck={false}
@@ -167,7 +168,7 @@ const SignVerify = () => {
         onChangeText={setMessage}
         testID="Message"
         inputAccessoryViewID={DoneAndDismissKeyboardInputAccessoryViewID}
-        style={[styles.flex, styles.text, styles.textMessage, stylesHooks.text]}
+        style={[styles.text, styles.textMessage, stylesHooks.text]}
         autoCorrect={false}
         autoCapitalize="none"
         spellCheck={false}
@@ -237,6 +238,10 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
   },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 40,
+  },
   text: {
     paddingHorizontal: 8,
     paddingVertical: 8,
@@ -247,8 +252,13 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     textAlignVertical: 'top',
   },
+  textSignature: {
+    minHeight: 80,
+    maxHeight: 120,
+  },
   textMessage: {
     minHeight: 50,
+    maxHeight: 200,
   },
   flex: {
     flex: 1,
@@ -261,5 +271,8 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  buttonsIcon: {
+    paddingHorizontal: 5,
   },
 });

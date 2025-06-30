@@ -156,6 +156,9 @@ export class QBTCWallet extends AbstractWallet {
    * Convert Uint8Array to hex string
    */
   private toHex(bytes: Uint8Array): string {
+    if (!bytes || !(bytes instanceof Uint8Array)) {
+      throw new Error('toHex: Invalid input - expected Uint8Array');
+    }
     return Buffer.from(bytes).toString('hex');
   }
 
@@ -311,6 +314,34 @@ export class QBTCWallet extends AbstractWallet {
       return ml_dsa87.verify(publicKey, messageBytes, signature);
     } catch (error) {
       console.error('Failed to verify signature:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Verify a message signature for the sign/verify screen
+   * For qBTC, we need to derive the public key from the address
+   */
+  verifyMessage(message: string, address: string, signature: string): boolean {
+    try {
+      // For qBTC, we can only verify if this is our own address
+      if (address !== this._address) {
+        throw new Error('Can only verify signatures for this wallet\'s address');
+      }
+      
+      if (!this._publicKey || !(this._publicKey instanceof Uint8Array) || this._publicKey.length === 0) {
+        console.error('QBTCWallet: Public key not properly initialized', {
+          publicKey: this._publicKey,
+          type: typeof this._publicKey,
+          isUint8Array: this._publicKey instanceof Uint8Array
+        });
+        throw new Error('No public key available - wallet may not be properly initialized');
+      }
+      
+      // Use our internal verifySignature method
+      return this.verifySignature(message, signature, this.toHex(this._publicKey));
+    } catch (error) {
+      console.error('Failed to verify message:', error);
       return false;
     }
   }
@@ -671,17 +702,16 @@ export class QBTCWallet extends AbstractWallet {
     this.secret = secret;
     if (secret && secret.length > 0) {
       try {
-        this._privateKey = this.fromHex(secret);
-        // Derive public key from private key if not already set
-        if (!this._publicKey && this._privateKey) {
-          // ML-DSA-87 doesn't allow deriving public key from private key alone
-          // We need to store both keys in the secret
-          const parts = secret.split(':');
-          if (parts.length === 2) {
-            this._privateKey = this.fromHex(parts[0]);
-            this._publicKey = this.fromHex(parts[1]);
-            this._address = this.deriveAddress(this._publicKey);
-          }
+        // ML-DSA-87 doesn't allow deriving public key from private key alone
+        // We need to store both keys in the secret separated by ':'
+        const parts = secret.split(':');
+        if (parts.length === 2) {
+          this._privateKey = this.fromHex(parts[0]);
+          this._publicKey = this.fromHex(parts[1]);
+          this._address = this.deriveAddress(this._publicKey);
+        } else {
+          // Legacy format with just private key - this shouldn't happen for qBTC
+          console.warn('QBTCWallet: Invalid secret format, expected privateKey:publicKey');
         }
       } catch (e) {
         console.warn('Failed to set secret for QBTCWallet:', e);
