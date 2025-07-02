@@ -13,6 +13,7 @@ import { SegwitBech32Wallet } from './wallets/segwit-bech32-wallet';
 import { SLIP39LegacyP2PKHWallet, SLIP39SegwitBech32Wallet, SLIP39SegwitP2SHWallet } from './wallets/slip39-wallets';
 import { WatchOnlyWallet } from './wallets/watch-only-wallet';
 import { TaprootWallet } from './wallets/taproot-wallet.ts';
+import { QBTCWallet } from './wallets/qbtc-wallet';
 
 export default class WalletGradient {
   static hdSegwitP2SHWallet: string[] = ['#007AFF', '#0040FF'];
@@ -27,6 +28,7 @@ export default class WalletGradient {
   static defaultGradients: string[] = ['#B770F6', '#9013FE'];
   static lightningCustodianWallet: string[] = ['#F1AA07', '#FD7E37']; // Corrected property with missing colors
   static aezeedWallet: string[] = ['#8584FF', '#5351FB'];
+  static qbtcWallet: string[] = ['#000000', '#000000']; // qBTC uses the same purple gradient as default for now
 
   static createWallet = () => {
     const { colors } = useTheme();
@@ -73,6 +75,9 @@ export default class WalletGradient {
         break;
       case LightningCustodianWallet.type:
         gradient = WalletGradient.lightningCustodianWallet;
+        break;
+      case QBTCWallet.type:
+        gradient = WalletGradient.qbtcWallet;
         break;
       default:
         gradient = WalletGradient.defaultGradients;
@@ -136,6 +141,9 @@ export default class WalletGradient {
         break;
       case LightningCustodianWallet.type:
         gradient = WalletGradient.lightningCustodianWallet;
+        break;
+      case QBTCWallet.type:
+        gradient = WalletGradient.qbtcWallet;
         break;
       default:
         gradient = WalletGradient.defaultGradients;

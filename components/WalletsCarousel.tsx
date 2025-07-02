@@ -16,7 +16,7 @@ import {
   UIManager,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import { LightningCustodianWallet, MultisigHDWallet } from '../class';
+import { LightningCustodianWallet, MultisigHDWallet, QBTCWallet } from '../class';
 import WalletGradient from '../class/wallet-gradient';
 import { useSizeClass, SizeClass } from '../blue_modules/sizeClass';
 import loc, { formatBalance, transactionTimeToReadable } from '../loc';
@@ -310,8 +310,12 @@ export const WalletCarouselItem: React.FC<WalletCarouselItemProps> = React.memo(
       case MultisigHDWallet.type:
         image = direction === 'rtl' ? require('../img/vault-shape-rtl.png') : require('../img/vault-shape.png');
         break;
+      case QBTCWallet.type:
+        // For now, use the same Bitcoin shape for qBTC wallets
+        image = direction === 'rtl' ? require('../img/btc-shape-rtl.png') : require('../img/qbtc.png');
+        break;
       default:
-        image = direction === 'rtl' ? require('../img/btc-shape-rtl.png') : require('../img/btc-shape.png');
+        image = direction === 'rtl' ? require('../img/btc-shape-rtl.png') : require('../img/qbtc.png');
     }
 
     const latestTransactionText =

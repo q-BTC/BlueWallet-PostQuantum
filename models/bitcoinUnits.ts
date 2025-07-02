@@ -1,6 +1,7 @@
 export const BitcoinUnit = {
   BTC: 'BTC',
   SATS: 'sats',
+  QBTC: 'qBTC',
   LOCAL_CURRENCY: 'local_currency',
   MAX: 'MAX',
 } as const;

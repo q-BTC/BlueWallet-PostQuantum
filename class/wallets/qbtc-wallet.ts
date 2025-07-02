@@ -7,6 +7,7 @@ import base58 from 'bs58';
 import BigNumber from 'bignumber.js';
 import axios from 'axios';
 import { randomBytes } from '../rng';
+import { BitcoinUnit } from '../../models/bitcoinUnits';
 
 // qBTC constants
 const QBTC_VERSION = 0x00;
@@ -58,7 +59,9 @@ interface QBTCUtxo {
 export class QBTCWallet extends AbstractWallet {
   static readonly type = 'qbtc';
   static readonly typeReadable = 'qBTC Quantum-Safe';
+  // @ts-ignore: override
   public readonly type = QBTCWallet.type;
+  // @ts-ignore: override
   public readonly typeReadable = QBTCWallet.typeReadable;
 
   // Store keys as Uint8Array
@@ -69,9 +72,14 @@ export class QBTCWallet extends AbstractWallet {
   private _txs: QBTCTransaction[] = [];
   private _nodeAvailable: boolean = false;
   
+  // HD wallet compatibility properties (not used by qBTC but needed for TypeScript)
+  _txs_by_external_index: Transaction[] = [];
+  _txs_by_internal_index: Transaction[] = [];
+  
   constructor() {
     super();
     this.chain = 'QBTC' as any; // qBTC chain identifier
+    this.preferredBalanceUnit = BitcoinUnit.QBTC; // Set qBTC as the preferred unit
     // Ensure node URL is always HTTPS
     this._ensureHttps();
   }
@@ -90,6 +98,13 @@ export class QBTCWallet extends AbstractWallet {
    */
   getChain(): string {
     return 'QBTC';
+  }
+
+  /**
+   * Override to use qBTC as the preferred balance unit
+   */
+  getPreferredBalanceUnit(): BitcoinUnit {
+    return BitcoinUnit.QBTC;
   }
 
   /**
@@ -245,8 +260,12 @@ export class QBTCWallet extends AbstractWallet {
       console.log('qBTC generate: Complete!');
     } catch (error) {
       console.error('Error generating qBTC wallet:', error);
-      console.error('Error stack:', error.stack);
-      throw new Error(`Failed to generate qBTC wallet: ${error.message}`);
+      if (error instanceof Error) {
+        console.error('Error stack:', error.stack);
+        throw new Error(`Failed to generate qBTC wallet: ${error.message}`);
+      } else {
+        throw new Error('Failed to generate qBTC wallet: Unknown error');
+      }
     }
   }
 
@@ -392,6 +411,9 @@ export class QBTCWallet extends AbstractWallet {
     }
 
     const target = targets[0];
+    if (target.value === undefined) {
+      throw new Error('Target value is required for qBTC transactions');
+    }
     const amount = new BigNumber(target.value).dividedBy(1e8).toFixed(8); // Convert from satoshis to qBTC
     
     // Create message for signing based on qBTC format
@@ -429,8 +451,18 @@ export class QBTCWallet extends AbstractWallet {
     tx.txid = this.calculateTxid(tx);
 
     // Return in the format expected by BlueWallet
+    // For qBTC, we need to create a transaction-like object with getId() and toHex() methods
+    const txHex = JSON.stringify(tx);
+    
+    // Create a wrapper object that mimics Bitcoin transaction interface
+    const txWrapper = {
+      getId: () => tx.txid || '',
+      toHex: () => txHex,
+      _qbtcTransaction: tx // Store the actual qBTC transaction for later use
+    };
+    
     return {
-      tx: tx,
+      tx: txWrapper,
       outputs: [{
         address: target.address,
         value: target.value
@@ -503,32 +535,43 @@ export class QBTCWallet extends AbstractWallet {
       this._txs = txs.map((tx: any) => {
         // Determine if this is incoming or outgoing based on direction
         const isIncoming = tx.direction === 'received';
+        // The API already returns negative amounts for sent transactions
         const amount = new BigNumber(tx.amount).multipliedBy(1e8).toNumber(); // Convert to satoshis
+        const absAmount = Math.abs(amount); // Get absolute value for inputs/outputs
+        
+        console.log('qBTC: Processing transaction:', {
+          txid: tx.txid,
+          direction: tx.direction,
+          originalAmount: tx.amount,
+          satoshiAmount: amount,
+          isIncoming
+        });
         
         return {
           txid: tx.txid,
           confirmations: tx.confirmations || 1, // Default to 1 if not provided
-          value: isIncoming ? amount : -amount, // Positive for received, negative for sent
+          value: amount, // Use the amount as-is (already negative for sent)
           fee: 0, // qBTC response doesn't include fee
           time: Math.floor(tx.timestamp / 1000), // Convert ms to seconds
-          received: isIncoming ? new Date(tx.timestamp).toISOString() : undefined,
+          received: new Date(tx.timestamp).toISOString(), // Set for both incoming and outgoing
+          hash: tx.txid, // Add hash field which is used by TransactionListItem
           inputs: isIncoming ? [{
             addresses: [tx.counterpart],
-            value: amount
+            value: absAmount
           }] : [{
             addresses: [this._address],
-            value: amount
+            value: absAmount
           }],
           outputs: isIncoming ? [{
             addresses: [this._address],
-            value: amount,
+            value: absAmount,
             n: 0,
             scriptPubKey: {
               addresses: [this._address]
             }
           }] : [{
             addresses: [tx.counterpart],
-            value: amount,
+            value: absAmount,
             n: 0,
             scriptPubKey: {
               addresses: [tx.counterpart]
@@ -579,7 +622,7 @@ export class QBTCWallet extends AbstractWallet {
 
   // Required abstract methods
   getTransactions(): Transaction[] {
-    return this._txs || [];
+    return (this._txs || []) as any as Transaction[];
   }
 
   async allowOnchainAddress(): Promise<boolean> {
@@ -679,6 +722,7 @@ export class QBTCWallet extends AbstractWallet {
         value: new BigNumber(u.amount).multipliedBy(1e8).toNumber(), // Convert to satoshis
         address: u.receiver,
         confirmations: 1, // qBTC doesn't track confirmations in the same way
+        height: 0, // qBTC doesn't provide height information
       }));
     } catch (error) {
       console.error('Error fetching qBTC UTXOs:', error);
@@ -694,11 +738,42 @@ export class QBTCWallet extends AbstractWallet {
     return hash.toString('hex');
   }
 
+  /**
+   * HD wallet compatibility method - qBTC doesn't use HD derivation
+   */
+  _getWIFbyAddress(address: string): string | false {
+    if (address !== this._address || !this._privateKey) {
+      return false;
+    }
+    // qBTC doesn't use WIF format, return private key hex instead
+    return this.getPrivateKey();
+  }
+
+  /**
+   * HD wallet compatibility method - qBTC doesn't have change addresses
+   */
+  addressIsChange(address: string): boolean {
+    return false;
+  }
+
+  /**
+   * Compatibility method for coin selection
+   */
+  coinselect(
+    utxos: any[],
+    targets: any[],
+    feeRate: number,
+    changeAddress: string,
+  ): { inputs: any[]; outputs: any[]; fee: number } | false {
+    // qBTC doesn't use UTXO model, so this is not applicable
+    return false;
+  }
+
   getSecret(): string {
     return this.secret;
   }
 
-  setSecret(secret: string): void {
+  setSecret(secret: string): this {
     this.secret = secret;
     if (secret && secret.length > 0) {
       try {
@@ -717,6 +792,7 @@ export class QBTCWallet extends AbstractWallet {
         console.warn('Failed to set secret for QBTCWallet:', e);
       }
     }
+    return this;
   }
 
   /**
@@ -758,7 +834,7 @@ export class QBTCWallet extends AbstractWallet {
    * Override fromJson to properly restore QBTCWallet
    */
   static fromJson(obj: string): QBTCWallet {
-    const wallet = AbstractWallet.fromJson.call(this, obj) as QBTCWallet;
+    const wallet = AbstractWallet.fromJson.call(this, obj) as unknown as QBTCWallet;
     // Ensure keys are properly restored from secret
     if (wallet.secret) {
       wallet.setSecret(wallet.secret);

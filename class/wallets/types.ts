@@ -17,6 +17,7 @@ import { SegwitP2SHWallet } from './segwit-p2sh-wallet';
 import { SLIP39LegacyP2PKHWallet, SLIP39SegwitBech32Wallet, SLIP39SegwitP2SHWallet } from './slip39-wallets';
 import { WatchOnlyWallet } from './watch-only-wallet';
 import { TaprootWallet } from './taproot-wallet.ts';
+import { QBTCWallet } from './qbtc-wallet';
 
 export type Utxo = {
   // Returned by BlueElectrum
@@ -160,6 +161,7 @@ export type TWallet =
   | SegwitBech32Wallet
   | SegwitP2SHWallet
   | TaprootWallet
-  | WatchOnlyWallet;
+  | WatchOnlyWallet
+  | QBTCWallet;
 
 export type THDWalletForWatchOnly = HDSegwitBech32Wallet | HDSegwitP2SHWallet | HDLegacyP2PKHWallet;

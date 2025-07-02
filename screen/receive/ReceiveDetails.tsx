@@ -245,7 +245,7 @@ const ReceiveDetails = () => {
         if (!addressToUse) return;
 
         // Skip Bitcoin Electrum operations for non-Bitcoin wallets
-        if (wallet && 'usesBitcoinInfrastructure' in wallet && !wallet.usesBitcoinInfrastructure()) {
+        if (wallet && 'usesBitcoinInfrastructure' in wallet && typeof wallet.usesBitcoinInfrastructure === 'function' && !wallet.usesBitcoinInfrastructure()) {
           console.debug('Skipping balance check for non-Bitcoin wallet:', wallet.type);
           return;
         }

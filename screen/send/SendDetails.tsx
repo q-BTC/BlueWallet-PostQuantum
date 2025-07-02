@@ -35,6 +35,7 @@ import { ContactList } from '../../class/contact-list';
 import DeeplinkSchemaMatch from '../../class/deeplink-schema-match';
 import { AbstractHDElectrumWallet } from '../../class/wallets/abstract-hd-electrum-wallet';
 import { CreateTransactionTarget, CreateTransactionUtxo, TWallet } from '../../class/wallets/types';
+import { QBTCWallet } from '../../class/wallets/qbtc-wallet';
 import AddressInput from '../../components/AddressInput';
 import presentAlert from '../../components/Alert';
 import * as AmountInput from '../../components/AmountInput';
@@ -227,7 +228,7 @@ const SendDetails = () => {
 
   useEffect(() => {
     // check if we have a suitable wallet
-    const suitable = wallets.filter(w => (w.chain === Chain.ONCHAIN || w.chain === 'QBTC') && w.allowSend());
+    const suitable = wallets.filter(w => (w.chain === Chain.ONCHAIN || w.chain === Chain.OFFCHAIN || w.type === 'qbtc') && w.allowSend());
     if (suitable.length === 0) {
       triggerHapticFeedback(HapticFeedbackTypes.NotificationError);
       presentAlert({ title: loc.errors.error, message: loc.send.details_wallet_before_tx });
@@ -644,10 +645,14 @@ const SendDetails = () => {
 
     assert(tx, 'createTRansaction failed');
 
-    txMetadata[tx.getId()] = {
-      memo: transactionMemo,
-    };
-    await saveToDisk();
+    // Handle both regular Bitcoin transactions and qBTC wrapper objects
+    const txId = typeof tx.getId === 'function' ? tx.getId() : tx.txid;
+    if (txId) {
+      txMetadata[txId] = {
+        memo: transactionMemo,
+      };
+      await saveToDisk();
+    }
 
     let recipients = outputs.filter(({ address }) => address !== change);
 
@@ -661,7 +666,7 @@ const SendDetails = () => {
       fee: new BigNumber(fee).dividedBy(100000000).toNumber(),
       memo: transactionMemo,
       walletID: wallet.getID(),
-      tx: tx.toHex(),
+      tx: typeof tx.toHex === 'function' ? tx.toHex() : JSON.stringify(tx),
       targets: targetsOrig,
       recipients,
       satoshiPerByte: requestedSatPerByte,

@@ -627,7 +627,8 @@
     "BTC": "BTC",
     "MAX": "Max",
     "sat_vbyte": "sat/vByte",
-    "sats": "sats"
+    "sats": "sats",
+    "qBTC": "qBTC"
   },
   "addresses": {
     "copy_private_key": "Copy private key",

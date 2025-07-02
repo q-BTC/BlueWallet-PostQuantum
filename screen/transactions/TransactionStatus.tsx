@@ -417,11 +417,12 @@ const TransactionStatus: React.FC<TransactionStatusProps> = ({ transaction, txid
     } else if (isCPFPPossible === ButtonStatus.Possible) {
       return (
         <>
-          <Button onPress={navigateToCPFP} title={loc.transactions.status_bump} />
+          <Button onPress={navigateToCPFP} title={loc.transactions?.status_bump || 'Bump fee'} />
           <BlueSpacing10 />
         </>
       );
     }
+    return null;
   };
 
   const renderRBFCancel = () => {
@@ -436,13 +437,14 @@ const TransactionStatus: React.FC<TransactionStatusProps> = ({ transaction, txid
         <>
           <TouchableOpacity accessibilityRole="button" style={styles.cancel}>
             <Text onPress={navigateToRBFCancel} style={styles.cancelText}>
-              {loc.transactions.status_cancel}
+              {loc.transactions?.status_cancel || 'Cancel'}
             </Text>
           </TouchableOpacity>
           <BlueSpacing10 />
         </>
       );
     }
+    return null;
   };
 
   const renderRBFBumpFee = () => {
@@ -456,11 +458,12 @@ const TransactionStatus: React.FC<TransactionStatusProps> = ({ transaction, txid
     } else if (isRBFBumpFeePossible === ButtonStatus.Possible) {
       return (
         <>
-          <Button onPress={navigateToRBFBumpFee} title={loc.transactions.status_bump} />
+          <Button onPress={navigateToRBFBumpFee} title={loc.transactions?.status_bump || 'Bump fee'} />
           <BlueSpacing10 />
         </>
       );
     }
+    return null;
   };
 
   const shortenCounterpartyName = (addr: string): string => {
@@ -469,40 +472,50 @@ const TransactionStatus: React.FC<TransactionStatusProps> = ({ transaction, txid
   };
 
   const renderTXMetadata = () => {
-    if (txMetadata[tx.hash]) {
-      if (txMetadata[tx.hash].memo) {
-        return (
-          <View style={styles.memo}>
-            <Text selectable style={styles.memoText}>
-              {txMetadata[tx.hash].memo}
-            </Text>
-          </View>
-        );
+    try {
+      if (txMetadata && tx && tx.hash && txMetadata[tx.hash]) {
+        if (txMetadata[tx.hash].memo) {
+          return (
+            <View style={styles.memo}>
+              <Text selectable style={styles.memoText}>
+                {String(txMetadata[tx.hash].memo || '')}
+              </Text>
+            </View>
+          );
+        }
       }
+    } catch (e) {
+      console.error('Error in renderTXMetadata:', e);
     }
+    return null;
   };
 
   const renderTXCounterparty = () => {
-    if (!tx.counterparty) return; // no BIP47 counterparty for this tx, return early
+    try {
+      if (!tx || !tx.counterparty) return null; // no BIP47 counterparty for this tx, return early
 
-    // theres a counterparty. lets lookup if theres an alias for him
-    let counterparty = counterpartyMetadata?.[tx.counterparty]?.label ?? tx.counterparty;
-    counterparty = shortenCounterpartyName(counterparty);
+      // theres a counterparty. lets lookup if theres an alias for him
+      let counterparty = counterpartyMetadata?.[tx.counterparty]?.label ?? tx.counterparty;
+      counterparty = shortenCounterpartyName(String(counterparty));
 
-    return (
-      <View style={styles.memo}>
-        <Text selectable style={styles.memoText}>
-          {tx.value < 0
-            ? loc.formatString(loc.transactions.to, {
-                counterparty,
-              })
-            : loc.formatString(loc.transactions.from, {
-                counterparty,
-              })}
-        </Text>
-        <BlueSpacing20 />
-      </View>
-    );
+      return (
+        <View style={styles.memo}>
+          <Text selectable style={styles.memoText}>
+            {String(tx.value < 0
+              ? loc.formatString(loc.transactions?.to || '', {
+                  counterparty,
+                })
+              : loc.formatString(loc.transactions?.from || '', {
+                  counterparty,
+                }))}
+          </Text>
+          <BlueSpacing20 />
+        </View>
+      );
+    } catch (e) {
+      console.error('Error in renderTXCounterparty:', e);
+      return null;
+    }
   };
 
   useEffect(() => {
@@ -551,38 +564,35 @@ const TransactionStatus: React.FC<TransactionStatusProps> = ({ transaction, txid
     <SafeArea>
       {loadingError ? (
         <BlueCard>
-          <BlueText>{loc.transactions.transaction_loading_error}</BlueText>
+          <BlueText>{String(loc.transactions?.transaction_loading_error || 'Error loading transaction')}</BlueText>
         </BlueCard>
       ) : isLoading || !tx || wallet === undefined ? (
         <BlueLoading />
-      ) : !transaction && !tx ? (
-        <BlueText>{loc.transactions.transaction_not_available}</BlueText>
       ) : (
         <>
           <HandOffComponent
-            title={loc.transactions.details_title}
+            title={String(loc.transactions?.details_title || 'Transaction Details')}
             type={HandOffActivityType.ViewInBlockExplorer}
-            url={`${selectedBlockExplorer.url}/tx/${tx.hash}`}
+            url={String(`${selectedBlockExplorer?.url || ''}/tx/${tx?.hash || ''}`)}
           />
 
           <View style={styles.container}>
             <BlueCard>
               <View style={styles.center}>
                 <Text style={[styles.value, stylesHook.value]} selectable>
-                  {wallet && formatBalanceWithoutSuffix(tx.value, wallet.preferredBalanceUnit, true)}
-                  {` `}
+                  {wallet && tx.value !== undefined ? String(formatBalanceWithoutSuffix(tx.value, wallet.preferredBalanceUnit, true)) : ''}
                   {wallet?.preferredBalanceUnit !== BitcoinUnit.LOCAL_CURRENCY && wallet && (
-                    <Text style={[styles.valueUnit, stylesHook.valueUnit]}>{wallet.preferredBalanceUnit}</Text>
+                    <Text style={[styles.valueUnit, stylesHook.valueUnit]}>{` ${String(wallet.preferredBalanceUnit)}`}</Text>
                   )}
                 </Text>
               </View>
 
-              {renderTXMetadata()}
-              {renderTXCounterparty()}
+              {tx && renderTXMetadata()}
+              {tx && renderTXCounterparty()}
 
               <View style={[styles.iconRoot, stylesHook.iconRoot]}>
                 <View>
-                  <Icon name="check" size={50} type="font-awesome" color={colors.successCheck} />
+                  <Icon name="check" size={50} type="font-awesome" color={colors?.successCheck || '#4CAF50'} />
                 </View>
                 <View style={[styles.iconWrap, styles.margin]}>
                   {(() => {
@@ -609,27 +619,27 @@ const TransactionStatus: React.FC<TransactionStatusProps> = ({ transaction, txid
                 </View>
               </View>
 
-              {tx.fee && (
+              {!!tx.fee && (
                 <View style={styles.fee}>
                   <BlueText style={styles.feeText}>
-                    {`${loc.send.create_fee.toLowerCase()} `}
-                    {formatBalanceWithoutSuffix(tx.fee, wallet?.preferredBalanceUnit ?? BitcoinUnit.BTC, true)}
-                    {wallet?.preferredBalanceUnit !== BitcoinUnit.LOCAL_CURRENCY && wallet?.preferredBalanceUnit}
+                    {loc.send?.create_fee ? `${loc.send.create_fee.toLowerCase()} ` : 'Fee: '}
+                    {tx.fee !== undefined ? String(formatBalanceWithoutSuffix(tx.fee, wallet?.preferredBalanceUnit ?? BitcoinUnit.BTC, true)) : ''}
+                    {wallet?.preferredBalanceUnit !== BitcoinUnit.LOCAL_CURRENCY && wallet?.preferredBalanceUnit ? ` ${String(wallet.preferredBalanceUnit)}` : ''}
                   </BlueText>
                 </View>
               )}
 
               <View style={styles.confirmations}>
                 <Text style={styles.confirmationsText}>
-                  {loc.formatString(loc.transactions.confirmations_lowercase, {
-                    confirmations: tx.confirmations > 6 ? '6+' : tx.confirmations,
-                  })}
+                  {String(loc.formatString(loc.transactions?.confirmations_lowercase || '', {
+                    confirmations: tx.confirmations > 6 ? '6+' : String(tx.confirmations || 0),
+                  }))}
                 </Text>
               </View>
               {eta ? (
                 <View style={styles.eta}>
                   <BlueSpacing10 />
-                  <Text style={styles.confirmationsText}>{eta}</Text>
+                  <Text style={styles.confirmationsText}>{String(eta)}</Text>
                 </View>
               ) : null}
             </BlueCard>

@@ -5,7 +5,7 @@ import { PayjoinClient } from 'payjoin-client';
 import BigNumber from 'bignumber.js';
 import * as bitcoin from 'bitcoinjs-lib';
 import { BlueText, BlueCard } from '../../BlueComponents';
-import { BitcoinUnit } from '../../models/bitcoinUnits';
+import { BitcoinUnit, Chain } from '../../models/bitcoinUnits';
 import loc, { formatBalance, formatBalanceWithoutSuffix } from '../../loc';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import presentAlert from '../../components/Alert';
@@ -27,6 +27,7 @@ import { HDSegwitBech32Wallet } from '../../class';
 import { useSettings } from '../../hooks/context/useSettings';
 import { majorTomToGroundControl } from '../../blue_modules/notifications';
 import { uint8ArrayToHex } from '../../blue_modules/uint8array-extras';
+import { QBTCWallet } from '../../class/wallets/qbtc-wallet';
 
 enum ActionType {
   SET_LOADING = 'SET_LOADING',
@@ -213,7 +214,21 @@ const Confirm: React.FC = () => {
         }
       }
 
-      const txid = bitcoin.Transaction.fromHex(tx).getId();
+      let txid: string;
+      if (wallet instanceof QBTCWallet) {
+        // For qBTC wallets, tx is a JSON string containing the transaction with txid
+        try {
+          const qbtcTx = JSON.parse(tx);
+          txid = qbtcTx.txid;
+        } catch (e) {
+          // If parsing fails, it might be the txid was already extracted
+          console.error('Failed to parse qBTC transaction:', e);
+          throw new Error('Invalid qBTC transaction format');
+        }
+      } else {
+        // For Bitcoin wallets, parse as hex
+        txid = bitcoin.Transaction.fromHex(tx).getId();
+      }
       txidsToWatch.push(txid);
       majorTomToGroundControl([], [], txidsToWatch);
       let amount = 0;
@@ -244,8 +259,11 @@ const Confirm: React.FC = () => {
   };
 
   const broadcastTransaction = async (transaction: string) => {
-    await BlueElectrum.ping();
-    await BlueElectrum.waitTillConnected();
+    // For qBTC wallets, skip BlueElectrum connection
+    if (!(wallet instanceof QBTCWallet)) {
+      await BlueElectrum.ping();
+      await BlueElectrum.waitTillConnected();
+    }
 
     const result = await wallet.broadcastTx(transaction);
     if (!result) {
@@ -341,7 +359,7 @@ const Confirm: React.FC = () => {
             <ActivityIndicator />
           ) : (
             <Button
-              disabled={(wallet?.chain !== 'QBTC' && isElectrumDisabled) || state.isButtonDisabled}
+              disabled={((wallet?.chain !== Chain.OFFCHAIN && wallet?.type !== 'qbtc') && isElectrumDisabled) || state.isButtonDisabled}
               onPress={handleSendTransaction}
               title={loc.send.confirm_sendNow}
             />

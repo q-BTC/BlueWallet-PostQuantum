@@ -322,6 +322,9 @@ export function formatBalance(balance: number, toUnit: string, withFormatting = 
     return removeTrailingZeros(+value) + ' ' + loc.units[BitcoinUnit.BTC];
   } else if (toUnit === BitcoinUnit.SATS) {
     return (withFormatting ? new Intl.NumberFormat().format(balance).toString() : String(balance)) + ' ' + loc.units[BitcoinUnit.SATS];
+  } else if (toUnit === BitcoinUnit.QBTC) {
+    const value = new BigNumber(balance).dividedBy(100000000).toFixed(8);
+    return removeTrailingZeros(+value) + ' ' + loc.units[BitcoinUnit.QBTC];
   } else {
     return satoshiToLocalCurrency(balance);
   }
@@ -343,6 +346,9 @@ export function formatBalanceWithoutSuffix(balance = 0, toUnit: string, withForm
     return removeTrailingZeros(value);
   } else if (toUnit === BitcoinUnit.SATS) {
     return withFormatting ? new Intl.NumberFormat().format(balance).toString() : String(balance);
+  } else if (toUnit === BitcoinUnit.QBTC) {
+    const value = new BigNumber(balance).dividedBy(100000000).toFixed(8);
+    return removeTrailingZeros(value);
   } else {
     return satoshiToLocalCurrency(balance);
   }

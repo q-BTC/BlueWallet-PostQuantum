@@ -102,6 +102,15 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = memo(
     }, [txMemo, item.confirmations, item.memo]);
 
     const formattedAmount = useMemo(() => {
+      // Debug logging for qBTC transactions
+      if (item.hash?.startsWith('101e9c4c') || item.hash?.startsWith('b56451c4')) {
+        console.log('TransactionListItem: Formatting amount', {
+          hash: item.hash,
+          rawValue: item.value,
+          itemPriceUnit,
+          walletID: item.walletID
+        });
+      }
       return formatBalanceWithoutSuffix(item.value && item.value, itemPriceUnit, true).toString();
     }, [item.value, itemPriceUnit]);
 
@@ -161,6 +170,17 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = memo(
     ]);
 
     const determineTransactionTypeAndAvatar = () => {
+      // Debug log for qBTC transactions
+      if (item.hash?.startsWith('101e9c4c') || item.hash?.startsWith('b56451c4')) {
+        console.log('TransactionListItem: Rendering transaction', {
+          hash: item.hash,
+          value: item.value,
+          confirmations: item.confirmations,
+          category: item.category,
+          type: item.type
+        });
+      }
+      
       if (item.category === 'receive' && item.confirmations! < 3) {
         return {
           label: loc.transactions.pending_transaction,

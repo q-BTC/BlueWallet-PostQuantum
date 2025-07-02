@@ -31,11 +31,13 @@ const CopyBox: React.FC<{ text: string; onPress: () => void }> = ({ text, onPres
 
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [pressed && styles.pressed, styles.copyRoot, stylesHook.copyRoot]}>
-      <View style={styles.copyLeft}>
-        <BlueText textBreakStrategy="balanced" style={styles.copyText}>
-          {text}
-        </BlueText>
-      </View>
+      <ScrollView style={styles.copyScrollView} nestedScrollEnabled={true}>
+        <View style={styles.copyLeft}>
+          <BlueText textBreakStrategy="balanced" style={styles.copyText}>
+            {text}
+          </BlueText>
+        </View>
+      </ScrollView>
       <View style={styles.copyRight}>
         <Icon name="copy" type="font-awesome-5" color={colors.foregroundColor} />
       </View>
@@ -250,6 +252,11 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 8,
     flexDirection: 'row',
+  },
+  copyScrollView: {
+    maxHeight: 120,
+    flex: 1,
+    marginRight: 8,
   },
   copyLeft: {
     flexShrink: 1,

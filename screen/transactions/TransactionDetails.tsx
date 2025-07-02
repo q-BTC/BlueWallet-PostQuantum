@@ -157,7 +157,11 @@ const TransactionDetails = () => {
   }, [saveTransactionDetails]);
 
   const handleOnOpenTransactionOnBlockExplorerTapped = () => {
-    const url = `${selectedBlockExplorer.url}/tx/${tx?.hash}`;
+    const wallet = wallets.find(w => w.getID() === walletID);
+    const isQBTCWallet = wallet?.type === 'qbtc';
+    const url = isQBTCWallet 
+      ? `https://qb.tc/explorer/${tx?.hash}`
+      : `${selectedBlockExplorer.url}/tx/${tx?.hash}`;
     Linking.canOpenURL(url)
       .then(supported => {
         if (supported) {
@@ -182,7 +186,16 @@ const TransactionDetails = () => {
   };
 
   const handleCopyPress = (stringToCopy: string) => {
-    Clipboard.setString(stringToCopy !== actionKeys.CopyToClipboard ? stringToCopy : `${selectedBlockExplorer.url}/tx/${tx?.hash}`);
+    if (stringToCopy !== actionKeys.CopyToClipboard) {
+      Clipboard.setString(stringToCopy);
+    } else {
+      const wallet = wallets.find(w => w.getID() === walletID);
+      const isQBTCWallet = wallet?.type === 'qbtc';
+      const url = isQBTCWallet 
+        ? `https://qb.tc/explorer/${tx?.hash}`
+        : `${selectedBlockExplorer.url}/tx/${tx?.hash}`;
+      Clipboard.setString(url);
+    }
   };
 
   if (isLoading || !tx) {
@@ -248,12 +261,18 @@ const TransactionDetails = () => {
     return fromArray;
   };
 
+  const wallet = wallets.find(w => w.getID() === walletID);
+  const isQBTCWallet = wallet?.type === 'qbtc';
+  const explorerUrl = isQBTCWallet 
+    ? `https://qb.tc/explorer/${tx.hash}`
+    : `${selectedBlockExplorer.url}/tx/${tx.hash}`;
+
   return (
     <SafeAreaScrollView>
       <HandOffComponent
         title={loc.transactions.details_title}
         type={HandOffActivityType.ViewInBlockExplorer}
-        url={`${selectedBlockExplorer.url}/tx/${tx.hash}`}
+        url={explorerUrl}
       />
       <BlueCard>
         <View>
