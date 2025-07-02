@@ -11,6 +11,7 @@ import {
   HDSegwitElectrumSeedP2WPKHWallet,
   HDSegwitP2SHWallet,
   LegacyWallet,
+  QBTCWallet,
   SegwitBech32Wallet,
   SegwitP2SHWallet,
   SLIP39SegwitBech32Wallet,
@@ -640,5 +641,51 @@ describe('import procedure', () => {
     assert.strictEqual(store.state.wallets[0].getMasterFingerprintHex(), '086ee178');
     assert.strictEqual(store.state.wallets[0].getDerivationPath(), "m/84'/0'/0'");
     assert.strictEqual(store.state.wallets[0]._getExternalAddressByIndex(0), 'bc1q5y4r767v5fzx74ez4nw36hjqrhr4ayeyut5px6');
+  });
+
+  it('can import qBTC wallet from privateKey:publicKey format', async () => {
+    const store = createStore();
+    // Sample qBTC key pair (privateKey:publicKey format)
+    const qbtcKeyPair = 'a1b2c3d4e5f6789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890:1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef';
+    
+    const { promise } = startImport(
+      qbtcKeyPair,
+      false,
+      false,
+      true, // offline mode since we're not testing network functionality
+      ...store.callbacks,
+    );
+    await promise;
+
+    assert.strictEqual(store.state.wallets.length, 1);
+    assert.strictEqual(store.state.wallets[0].type, QBTCWallet.type);
+    assert.strictEqual(store.state.wallets[0].typeReadable, 'qBTC Quantum-Safe');
+  });
+
+  it('can import qBTC wallet from export JSON', async () => {
+    const store = createStore();
+    // Sample qBTC export JSON
+    const qbtcExport = JSON.stringify({
+      type: 'qbtc',
+      privateKey: 'a1b2c3d4e5f6789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890',
+      publicKey: '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+      address: 'bqs1qtest123',
+      nodeUrl: 'https://api.bitcoinqs.org:8080',
+      chainId: 1
+    });
+    
+    const { promise } = startImport(
+      qbtcExport,
+      false,
+      false,
+      true, // offline mode since we're not testing network functionality
+      ...store.callbacks,
+    );
+    await promise;
+
+    // The import process may find multiple wallet types. Ensure qBTC is found first
+    assert.ok(store.state.wallets.length >= 1);
+    assert.strictEqual(store.state.wallets[0].type, QBTCWallet.type);
+    assert.strictEqual(store.state.wallets[0].typeReadable, 'qBTC Quantum-Safe');
   });
 });

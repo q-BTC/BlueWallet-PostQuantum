@@ -13,6 +13,7 @@ import {
   LegacyWallet,
   LightningCustodianWallet,
   MultisigHDWallet,
+  QBTCWallet,
   SegwitBech32Wallet,
   SegwitP2SHWallet,
   SLIP39LegacyP2PKHWallet,
@@ -100,6 +101,7 @@ const startImport = (
     // -3. ask for password, if needed and validate it
     // -2. check if BIP38 encrypted
     // -1a. check if multisig
+    // -1b. check if its qBTC wallet (privateKey:publicKey format or export JSON)
     // -1. check lightning custodian
     // 0. check if its HDSegwitBech32Wallet (BIP84)
     // 1. check if its HDSegwitP2SHWallet (BIP49)
@@ -183,6 +185,28 @@ const startImport = (
       await fetch(ms, true, false);
       yield { wallet: ms };
     }
+
+    // is it qBTC wallet? Check this early before mnemonic checks
+    yield { progress: 'qBTC' };
+    // Check if it's a qBTC wallet key format (privateKey:publicKey)
+    if (text.includes(':') && text.split(':').length === 2) {
+      const [privateKey, publicKey] = text.split(':');
+      // Validate hex format for both keys
+      if (/^[0-9a-fA-F]+$/.test(privateKey) && /^[0-9a-fA-F]+$/.test(publicKey)) {
+        const qbtcWallet = new QBTCWallet();
+        qbtcWallet.setSecret(text);
+        yield { wallet: qbtcWallet };
+      }
+    }
+    
+    // Check if it's a qBTC wallet export JSON
+    try {
+      const parsedData = JSON.parse(text);
+      if (parsedData.type === 'qbtc' && parsedData.privateKey && parsedData.publicKey) {
+        const qbtcWallet = QBTCWallet.fromExport(parsedData);
+        yield { wallet: qbtcWallet };
+      }
+    } catch (_) {}
 
     // is it lightning custodian?
     yield { progress: 'lightning custodian' };

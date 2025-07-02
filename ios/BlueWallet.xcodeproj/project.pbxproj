@@ -160,7 +160,7 @@
 /* Begin PBXFileReference section */
 		00E356F11AD99517003FC87E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		040819EDF8BD9C50A9C83E24 /* libPods-BlueWallet.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-BlueWallet.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		13B07F961A680F5B00A75B9A /* BlueWallet.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BlueWallet.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		13B07F961A680F5B00A75B9A /* BlueWallet Quantum.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "BlueWallet Quantum.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = BlueWallet/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = BlueWallet/Info.plist; sourceTree = "<group>"; };
 		1AE7FA8B4A18928E917F42D1 /* Pods-BlueWallet.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BlueWallet.debug.xcconfig"; path = "Target Support Files/Pods-BlueWallet/Pods-BlueWallet.debug.xcconfig"; sourceTree = "<group>"; };
@@ -553,7 +553,7 @@
 		83CBBA001A601CBA00E9B192 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				13B07F961A680F5B00A75B9A /* BlueWallet.app */,
+				13B07F961A680F5B00A75B9A /* BlueWallet Quantum.app */,
 				6D2A6461258BA92C0092292B /* Stickers.appex */,
 				6DD4109C266CADF10087DE03 /* WidgetsExtension.appex */,
 			);
@@ -737,7 +737,7 @@
 			);
 			name = BlueWallet;
 			productName = "Hello World";
-			productReference = 13B07F961A680F5B00A75B9A /* BlueWallet.app */;
+			productReference = 13B07F961A680F5B00A75B9A /* BlueWallet Quantum.app */;
 			productType = "com.apple.product-type.application";
 		};
 		6D2A6460258BA92C0092292B /* Stickers */ = {
@@ -1209,8 +1209,8 @@
 					"-lc++",
 				);
 				PRESERVE_DEAD_CODE_INITS_AND_TERMS = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = io.bluewallet.bluewallet;
-				PRODUCT_NAME = BlueWallet;
+				PRODUCT_BUNDLE_IDENTIFIER = io.bluewallet.bluewalletquantum;
+				PRODUCT_NAME = "BlueWallet Quantum";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "match AppStore io.bluewallet.bluewallet";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "match Development io.bluewallet.bluewallet catalyst";
@@ -1266,8 +1266,8 @@
 					"-lc++",
 				);
 				PRESERVE_DEAD_CODE_INITS_AND_TERMS = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = io.bluewallet.bluewallet;
-				PRODUCT_NAME = BlueWallet;
+				PRODUCT_BUNDLE_IDENTIFIER = io.bluewallet.bluewalletquantum;
+				PRODUCT_NAME = "BlueWallet Quantum";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "match AppStore io.bluewallet.bluewallet";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "match AppStore io.bluewallet.bluewallet catalyst";
