@@ -4,14 +4,14 @@
 <dict>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
-		<string>io.bluewallet.bluewallet.fetchTxsForWallet</string>
+		<string>tc.qb.qbtcwallet.fetchTxsForWallet</string>
 	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>BlueWallet</string>
+	<string>qBTC Wallet</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
@@ -25,7 +25,7 @@
 			<string>Owner</string>
 			<key>LSItemContentTypes</key>
 			<array>
-				<string>io.bluewallet.psbt</string>
+				<string>tc.qb.qbtcwallet.psbt</string>
 			</array>
 		</dict>
 		<dict>
@@ -54,7 +54,7 @@
 			<string>Owner</string>
 			<key>LSItemContentTypes</key>
 			<array>
-				<string>io.bluewallet.psbt.txn</string>
+				<string>tc.qb.qbtcwallet.psbt.txn</string>
 			</array>
 		</dict>
 		<dict>
@@ -68,7 +68,7 @@
 			<string>Owner</string>
 			<key>LSItemContentTypes</key>
 			<array>
-				<string>io.bluewallet.backup</string>
+				<string>tc.qb.qbtcwallet.backup</string>
 			</array>
 		</dict>
 		<dict>
@@ -82,7 +82,7 @@
 			<string>Owner</string>
 			<key>LSItemContentTypes</key>
 			<array>
-				<string>io.bluewallet.bwcosigner</string>
+				<string>tc.qb.qbtcwallet.bwcosigner</string>
 			</array>
 		</dict>
 	</array>
@@ -193,8 +193,8 @@
 	<string>In order to import an image for scanning, we need your permission to access your photo library.</string>
 	<key>NSUserActivityTypes</key>
 	<array>
-		<string>io.bluewallet.bluewallet.receiveonchain</string>
-		<string>io.bluewallet.bluewallet.xpub</string>
+		<string>tc.qb.qbtcwallet.receiveonchain</string>
+		<string>tc.qb.qbtcwallet.xpub</string>
 	</array>
 	<key>UIAppFonts</key>
 	<array>
@@ -253,7 +253,7 @@
 			<key>UTTypeDescription</key>
 			<string>Partially Signed Bitcoin Transaction</string>
 			<key>UTTypeIdentifier</key>
-			<string>io.bluewallet.psbt</string>
+			<string>tc.qb.qbtcwallet.psbt</string>
 			<key>UTTypeTagSpecification</key>
 			<dict>
 				<key>public.filename-extension</key>
@@ -266,7 +266,7 @@
 			<key>UTTypeDescription</key>
 			<string>BW COSIGNER</string>
 			<key>UTTypeIdentifier</key>
-			<string>io.bluewallet.bwcosigner</string>
+			<string>tc.qb.qbtcwallet.bwcosigner</string>
 			<key>UTTypeTagSpecification</key>
 			<dict>
 				<key>public.filename-extension</key>
@@ -283,7 +283,7 @@
 			<key>UTTypeDescription</key>
 			<string>Bitcoin Transaction</string>
 			<key>UTTypeIdentifier</key>
-			<string>io.bluewallet.psbt.txn</string>
+			<string>tc.qb.qbtcwallet.psbt.txn</string>
 			<key>UTTypeTagSpecification</key>
 			<dict>
 				<key>public.filename-extension</key>
@@ -300,7 +300,7 @@
 			<key>UTTypeDescription</key>
 			<string>Electrum Backup</string>
 			<key>UTTypeIdentifier</key>
-			<string>io.bluewallet.backup</string>
+			<string>tc.qb.qbtcwallet.backup</string>
 			<key>UTTypeTagSpecification</key>
 			<dict>
 				<key>public.filename-extension</key>
@@ -337,11 +337,6 @@
 		</dict>
 	</array>
 	<key>WKCompanionAppBundleIdentifier</key>
-	<string>io.bluewallet.bluewallet</string>
-	<key>bugsnag</key>
-	<dict>
-		<key>apiKey</key>
-		<string>17ba9059f676f1cc4f45d98182388b01</string>
-	</dict>
+	<string>tc.qb.qbtcwallet</string>
 </dict>
 </plist>
