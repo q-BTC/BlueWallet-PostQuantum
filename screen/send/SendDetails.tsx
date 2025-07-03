@@ -109,7 +109,7 @@ const SendDetails = () => {
   const { isEditable } = routeParams;
   // if utxo is limited we use it to calculate available balance
   const balance: number = utxos ? utxos.reduce((prev, curr) => prev + curr.value, 0) : (wallet?.getBalance() ?? 0);
-  const allBalance = formatBalanceWithoutSuffix(balance, BitcoinUnit.BTC, true);
+  const allBalance = formatBalanceWithoutSuffix(balance, amountUnit, true);
 
   // if cutomFee is not set, we need to choose highest possible fee for wallet balance
   // if there are no funds for even Slow option, use 1 sat/vbyte fee
@@ -672,6 +672,7 @@ const SendDetails = () => {
       satoshiPerByte: requestedSatPerByte,
       payjoinUrl,
       psbt,
+      amountUnit: wallet.getPreferredBalanceUnit(),
     });
     setIsLoading(false);
   };
@@ -680,8 +681,9 @@ const SendDetails = () => {
     const newWallet = wallets.find(w => w.getID() === routeParams.walletID);
     if (newWallet) {
       setWallet(newWallet);
+      setParams({ feeUnit: newWallet.getPreferredBalanceUnit(), amountUnit: newWallet.getPreferredBalanceUnit() });
     }
-  }, [routeParams.walletID, wallets]);
+  }, [routeParams.walletID, wallets, setParams]);
 
   const setTransactionMemo = (memo: string) => {
     setParams({ transactionMemo: memo });
@@ -1405,7 +1407,7 @@ const SendDetails = () => {
             onPress={handleCoinControl}
           >
             <BlueText>
-              {loc.formatString(loc.send.details_frozen, { amount: formatBalanceWithoutSuffix(frozenBalance, BitcoinUnit.BTC, true) })}
+              {loc.formatString(loc.send.details_frozen, { amount: formatBalanceWithoutSuffix(frozenBalance, amountUnit, true) })}
             </BlueText>
           </Pressable>
         )}
@@ -1516,9 +1518,9 @@ const SendDetails = () => {
       </View>
       <DismissKeyboardInputAccessory />
       {Platform.select({
-        ios: <InputAccessoryAllFunds canUseAll={balance > 0} onUseAllPressed={onUseAllPressed} balance={String(allBalance)} />,
+        ios: <InputAccessoryAllFunds canUseAll={balance > 0} onUseAllPressed={onUseAllPressed} balance={String(allBalance)} unit={amountUnit} />,
         android: isVisible && (
-          <InputAccessoryAllFunds canUseAll={balance > 0} onUseAllPressed={onUseAllPressed} balance={String(allBalance)} />
+          <InputAccessoryAllFunds canUseAll={balance > 0} onUseAllPressed={onUseAllPressed} balance={String(allBalance)} unit={amountUnit} />
         ),
       })}
 

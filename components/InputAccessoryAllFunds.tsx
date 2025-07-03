@@ -10,9 +10,10 @@ interface InputAccessoryAllFundsProps {
   balance: string;
   canUseAll: boolean;
   onUseAllPressed: () => void;
+  unit?: BitcoinUnit;
 }
 
-const InputAccessoryAllFunds: React.FC<InputAccessoryAllFundsProps> = ({ balance, canUseAll, onUseAllPressed }) => {
+const InputAccessoryAllFunds: React.FC<InputAccessoryAllFundsProps> = ({ balance, canUseAll, onUseAllPressed, unit = BitcoinUnit.BTC }) => {
   const { colors } = useTheme();
 
   const stylesHook = StyleSheet.create({
@@ -32,10 +33,10 @@ const InputAccessoryAllFunds: React.FC<InputAccessoryAllFundsProps> = ({ balance
       <View style={styles.left}>
         <Text style={[styles.totalLabel, stylesHook.totalLabel]}>{loc.send.input_total}</Text>
         {canUseAll ? (
-          <BlueButtonLink onPress={onUseAllPressed} style={styles.totalCan} title={`${balance} ${BitcoinUnit.BTC}`} />
+          <BlueButtonLink onPress={onUseAllPressed} style={styles.totalCan} title={`${balance} ${loc.units[unit]}`} />
         ) : (
           <Text style={[styles.totalCanNot, stylesHook.totalCanNot]}>
-            {balance} {BitcoinUnit.BTC}
+            {balance} {loc.units[unit]}
           </Text>
         )}
       </View>

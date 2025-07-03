@@ -94,7 +94,8 @@ export const AmountInput: React.FC<AmountInputProps> = props => {
       return '';
     }
     switch (unit) {
-      case BitcoinUnit.BTC: {
+      case BitcoinUnit.BTC:
+      case BitcoinUnit.QBTC: {
         const sat = new BigNumber(amount).multipliedBy(100000000).toNumber();
         return formatBalanceWithoutSuffix(sat, BitcoinUnit.LOCAL_CURRENCY, false);
       }
@@ -142,13 +143,16 @@ export const AmountInput: React.FC<AmountInputProps> = props => {
   const changeAmountUnit = useCallback(() => {
     let previousUnit = unit;
     let newUnit;
-    // cycle through units BTC -> SAT -> LOCAL_CURRENCY -> BTC
+    // cycle through units BTC/qBTC -> SAT -> LOCAL_CURRENCY -> BTC/qBTC
     if (previousUnit === BitcoinUnit.BTC) {
+      newUnit = BitcoinUnit.SATS;
+    } else if (previousUnit === BitcoinUnit.QBTC) {
       newUnit = BitcoinUnit.SATS;
     } else if (previousUnit === BitcoinUnit.SATS) {
       newUnit = BitcoinUnit.LOCAL_CURRENCY;
     } else if (previousUnit === BitcoinUnit.LOCAL_CURRENCY) {
-      newUnit = BitcoinUnit.BTC;
+      // For qBTC wallets, return to qBTC; otherwise BTC
+      newUnit = props.amount && props.unit === BitcoinUnit.QBTC ? BitcoinUnit.QBTC : BitcoinUnit.BTC;
     } else {
       newUnit = BitcoinUnit.BTC;
       previousUnit = BitcoinUnit.SATS;

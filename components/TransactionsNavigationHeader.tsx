@@ -154,6 +154,8 @@ const TransactionsNavigationHeader: React.FC<TransactionsNavigationHeaderProps> 
         return direction === 'rtl' ? require('../img/lnd-shape-rtl.png') : require('../img/lnd-shape.png');
       case MultisigHDWallet.type:
         return direction === 'rtl' ? require('../img/vault-shape-rtl.png') : require('../img/vault-shape.png');
+      case 'qbtc':
+        return direction === 'rtl' ? require('../img/btc-shape-rtl.png') : require('../img/qbtc.png');
       default:
         return direction === 'rtl' ? require('../img/btc-shape-rtl.png') : require('../img/btc-shape.png');
     }
