@@ -405,7 +405,11 @@ const ReceiveDetails = () => {
                 </>
               )}
               <View style={styles.qrCodeContainer}>
-                <QRCodeComponent value={bip21encoded} size={qrCodeSize} />
+                <QRCodeComponent 
+                  value={bip21encoded} 
+                  size={qrCodeSize} 
+                  logo={wallet?.type === 'qbtc' ? require('../../img/qbtc.png') : require('../../img/qr-code.png')}
+                />
               </View>
               <CopyTextToClipboard text={isCustom ? bip21encoded : address} />
             </View>
@@ -422,7 +426,11 @@ const ReceiveDetails = () => {
             <>
               <TipBox description={loc.receive.bip47_explanation} containerStyle={styles.tip} />
               <View style={styles.qrCodeContainer}>
-                <QRCodeComponent value={qrValue} size={qrCodeSize} />
+                <QRCodeComponent 
+                  value={qrValue} 
+                  size={qrCodeSize} 
+                  logo={wallet?.type === 'qbtc' ? require('../../img/qbtc.png') : require('../../img/qr-code.png')}
+                />
               </View>
               <CopyTextToClipboard text={qrValue} truncated={false} />
             </>

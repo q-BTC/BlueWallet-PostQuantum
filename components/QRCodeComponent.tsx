@@ -18,6 +18,7 @@ interface QRCodeComponentProps {
   size?: number;
   ecl?: 'H' | 'Q' | 'M' | 'L';
   onError?: () => void;
+  logo?: any;
 }
 
 const BORDER_WIDTH = 6;
@@ -62,6 +63,7 @@ const QRCodeComponent: React.FC<QRCodeComponentProps> = ({
   size = 300,
   ecl = 'H',
   onError = () => {},
+  logo = require('../img/qr-code.png'),
 }) => {
   const qrCode = useRef<any>();
   const { colors, dark } = useTheme();
@@ -93,7 +95,7 @@ const QRCodeComponent: React.FC<QRCodeComponentProps> = ({
   const renderQRCode = (
     <QRCode
       value={value}
-      {...(isLogoRendered ? { logo: require('../img/qr-code.png') } : {})}
+      {...(isLogoRendered ? { logo } : {})}
       size={newSize}
       logoSize={logoSize}
       color="#000000"
