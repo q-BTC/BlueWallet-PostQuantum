@@ -311,11 +311,10 @@ export const WalletCarouselItem: React.FC<WalletCarouselItemProps> = React.memo(
         image = direction === 'rtl' ? require('../img/vault-shape-rtl.png') : require('../img/vault-shape.png');
         break;
       case QBTCWallet.type:
-        // For now, use the same Bitcoin shape for qBTC wallets
         image = direction === 'rtl' ? require('../img/btc-shape-rtl.png') : require('../img/qbtc.png');
         break;
       default:
-        image = direction === 'rtl' ? require('../img/btc-shape-rtl.png') : require('../img/qbtc.png');
+        image = direction === 'rtl' ? require('../img/btc-shape-rtl.png') : require('../img/btc-shape.png');
     }
 
     const latestTransactionText =
